@@ -1,0 +1,9 @@
+sudoku.rkt - A sudoku solver implemented in Racket by Andrew Otto
+
+This simple sudoku solver uses constraint programming and search to complete 9x9 puzzles. The constraints are represented as the list possiblevals, which contains the possible values for each cell in the puzzle. When a cell is set to some value using the assign function, that value is removed as a possibility from all adjacent cells (cells in the same row, col, or 3x3 block). This is propagated whenever it happens that a cell now only has one possibility.
+
+It is likely for more difficult puzzles that simply setting the initial values and any such final possibilities will not complete the puzzle. In this case it is necessary to search. The search function finds the unsolved cell with fewest possibilities and tries each one. The result that is a complete puzzle is the solution. Note that this is not very efficient as the search will likely need to recurse multiple times for each branch.
+
+
+How to run:
+Call solve-and-print using a list of 81 numbers from 0-9, where 0 is a blank square on the original puzzle. See sudoku_tests.rkt for examples.
