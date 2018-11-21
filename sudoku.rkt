@@ -9,13 +9,15 @@
 
 ;; p1, p2 are "adjacent" if they share a zone, ie a row, col, or block
 (define (adjacent? p1 p2)
-  (let ((y (car p1)) (x (cdr p1))
-        (i (car p2)) (j (cdr p2)))
-    (if (and (= y i) (= x j))  ;; disallow self loop
-        #f
-        (or (= y i) (= x j)  ;; same row or col
-            (and (= (floor (/ y sqrtn)) (floor (/ i sqrtn)))  ;;same block
-                 (= (floor (/ x sqrtn)) (floor (/ j sqrtn))))))))
+  (let ((y (car p1))
+        (x (cdr p1))
+        (i (car p2))
+        (j (cdr p2)))
+    (and (not (equal? p1 p2))  ;; disallow self loop
+         (or (= y i)  ;; same row
+             (= x j)  ;; same col
+             (and (= (floor (/ y sqrtn)) (floor (/ i sqrtn)))  ;;same block
+                  (= (floor (/ x sqrtn)) (floor (/ j sqrtn))))))))
 
 ;; list of all coordinates in ascending row, col order
 (define coord-list
@@ -49,8 +51,7 @@
       (error "p not in lis" p)
       (let ((p2 (first (first lis)))
             (lis2 (rest (first lis))))
-        (if (and (= (car p) (car p2))
-                 (= (cdr p) (cdr p2)))
+        (if (equal? p p2)
             lis2
             (get p (rest lis))))))
 
@@ -61,30 +62,23 @@
       (error "p not in lis" p)
       (let ((p2 (first (first lis)))
             (lis2 (rest (first lis))))
-        (if (and (= (car p) (car p2))
-                 (= (cdr p) (cdr p2)))
+        (if (equal? p p2)
             (cons (cons p newl) (rest lis))
             (cons (cons p2 lis2) (setl p newl (rest lis)))))))
 
 ;; for possiblevals-style list,
 ;; returns the list for the pair with the least possibilities > 1
 (define (closest-solved possiblevals)
-  (define (rec minlis minnum lis)
-    (cond ((empty? lis) minlis)
-          ((let* ((currlis (first lis))
-                 (currlen (length currlis)))
-             (and (< currlen minnum)
-                  (> currlen 2)))
-           (rec (first lis) (length (first lis)) (rest lis)))
-          (else (rec minlis minnum (rest lis)))))
-  (rec empty (+ n 2) possiblevals))
+  (argmin (lambda (l)
+            (if (<= (length l) 2)
+                n
+                (length l)))
+          possiblevals))
 
 ;; check that possiblevals is complete, ie that every square has one possibility
 (define (solved? possiblevals)
-  (cond ((empty? possiblevals) #t)
-        ((= (length (first possiblevals)) 2)
-         (solved? (rest possiblevals)))
-        (else #f)))
+  (andmap (lambda (l) (= (length l) 2))
+          possiblevals))
 
 ;; given a list of assign attempts, picks the one that is not #f
 (define (get-soln lis)
