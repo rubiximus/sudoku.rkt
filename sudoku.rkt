@@ -46,25 +46,15 @@
 
 ;; for list lis formatted like adj-list or possiblevals,
 ;; returns the list corresponding to the given pair p
-(define (get p lis)
-  (if (empty? lis)
-      (error "p not in lis" p)
-      (let ((p2 (first (first lis)))
-            (lis2 (rest (first lis))))
-        (if (equal? p p2)
-            lis2
-            (get p (rest lis))))))
+(define (getl p lis)
+  (rest (assoc p lis)))
 
 ;; for list lis formatted like adj-list or possiblevals,
 ;; returns a new version of lis where pair p's list is set to newl
 (define (setl p newl lis)
-  (if (empty? lis)
-      (error "p not in lis" p)
-      (let ((p2 (first (first lis)))
-            (lis2 (rest (first lis))))
-        (if (equal? p p2)
-            (cons (cons p newl) (rest lis))
-            (cons (cons p2 lis2) (setl p newl (rest lis)))))))
+  (list-set lis
+            (index-where lis (lambda (l) (equal? (first l) p)))
+            (cons p newl)))
 
 ;; for possiblevals-style list,
 ;; returns the list for the pair with the least possibilities > 1
@@ -95,7 +85,7 @@
          possiblevals)
         (else
          (define pl (closest-solved possiblevals))
-         ;(displayln (first pl))
+         ;;(displayln (first pl))
          (define results (map (lambda (v) ;TODO: parallelize this map (see: racket/future)
                                 (let ((result (assign (first pl) v possiblevals)))
                                   (if result
@@ -110,7 +100,9 @@
   (cond ((not possiblevals) #f) ;; propagate inconsistency status
         ((= v 0) possiblevals) ;; no assigning to 0 value
         (else
-         (foldl (lambda (x l) (eliminate p x l))  possiblevals (remove v (get p possiblevals))))))
+         (foldl (lambda (x l) (eliminate p x l))
+                possiblevals
+                (remove v (getl p possiblevals))))))
 
 ;; removes v from the possiblevals for p
 ;; propagates this change through p's adjacent vertices
@@ -118,17 +110,17 @@
   (cond ((not possiblevals)
          #f)
         (else
-         (define oldpvals (get p possiblevals))
+         (define oldpvals (getl p possiblevals))
          (define newpvals (remove v oldpvals))
          (cond ((= (length oldpvals) (length newpvals)) ;; check if already eliminated
                 possiblevals)
                ((= (length newpvals) 0) ;; if no possible values then inconsistency
-                ;(error "Inconsistency found -- problem unsolvable"))
+                ;;(error "Inconsistency found -- problem unsolvable"))
                 #f)
                ((= (length newpvals) 1) ;; eliminate this value from adjacent vertices
                 (foldl (lambda (p l) (eliminate p (first newpvals) l))
                        (setl p newpvals possiblevals)
-                       (get p adj-list)))
+                       (getl p adj-list)))
                (else
                 (setl p newpvals possiblevals))))))
 
